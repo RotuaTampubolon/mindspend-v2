@@ -2,7 +2,17 @@
 
 ## Objective
 
-Mengukur apakah Mindspend berhasil membantu user menjadi lebih sadar dan disiplin dalam mengelola pengeluaran bulanannya.
+Mengukur apakah Mindspend berhasil membantu user menjadi lebih sadar
+dan disiplin dalam mengelola pengeluaran bulanannya.
+
+---
+
+## Analytics Infrastructure
+
+Semua metrics di dokumen ini di-track menggunakan **PostHog**.
+
+Setiap user action yang relevan akan di-capture sebagai event
+dan di-monitor melalui PostHog dashboard.
 
 ---
 
@@ -10,11 +20,16 @@ Mengukur apakah Mindspend berhasil membantu user menjadi lebih sadar dan disipli
 
 ### Budget Adherence Rate
 
-Persentase user yang berhasil tetap berada di dalam budget yang telah mereka tentukan.
+Persentase user yang berhasil tetap berada di dalam budget
+yang telah mereka tentukan di periode berjalan.
 
-Formula:
+**Formula:**
+Budget Adherence Rate = Users Within Budget / Total Active Users
 
-Users Within Budget ÷ Total Active Users
+**How to measure:**
+
+PostHog event `budget_period_ended` dengan property
+`is_within_budget: true / false` per user per period.
 
 ---
 
@@ -22,76 +37,93 @@ Users Within Budget ÷ Total Active Users
 
 ### Weekly Active Users (WAU)
 
-Jumlah user yang aktif menggunakan aplikasi setiap minggu.
+Jumlah unique user yang membuka dan menggunakan aplikasi
+minimal satu kali dalam satu minggu.
 
-Target MVP:
+**Target MVP:** 35%+
 
-> 60%+ user kembali menggunakan aplikasi setiap minggu.
+**How to measure:**
+
+PostHog built-in Active Users report,
+filter by `app_opened` event per weekly cohort.
 
 ---
 
 ### Transaction Creation Rate
 
-Mengukur seberapa sering user mencatat transaksi.
+Rata-rata jumlah transaksi yang dicatat per active user per minggu.
+Mengukur seberapa rutin user engage dengan core feature Mindspend.
 
-Formula:
+**Formula:**
+Transaction Creation Rate = Total Transactions / Total Active Users
 
-Total Transactions
-÷
-Total Active Users
+**Target MVP:** Minimal 3 transaksi per user per minggu.
+
+**How to measure:**
+
+PostHog event `transaction_created` dengan property
+`type: income / expense`.
 
 ---
 
 ### Budget Setup Rate
 
-Persentase user yang berhasil menyelesaikan onboarding dan membuat budget pertama mereka.
+Persentase user yang berhasil menyelesaikan onboarding
+dan set budget pertama mereka.
 
-Formula:
+**Formula:**
+Budget Setup Rate = Users With Budget / Registered Users
 
-Users With Budget ÷ Registered Users
+**Target MVP:** 80%+
 
-Target MVP:
+**How to measure:**
 
-> 80%+
+PostHog funnel dari event `onboarding_started`
+→ `budget_created`.
 
 ---
 
 ### Weekly Check-In Open Rate
 
-Persentase user yang membuka Weekly Financial Check-In setelah reminder dikirim.
+Persentase user yang membuka Weekly Financial Check-In
+setelah Friday reminder dikirim.
 
-Formula:
+**Formula:**
+Check-In Open Rate = Opened Check-In / Delivered Reminder
 
-Opened Check-In
-÷
-Delivered Reminder
+**Target MVP:** 30%+
 
-Target MVP:
+**How to measure:**
 
-> 40%+
+PostHog event `checkin_opened` dibandingkan dengan
+total `reminder_delivered` per minggu.
 
 ---
 
 ### User Retention
 
-Mengukur apakah user masih menggunakan aplikasi setelah beberapa minggu.
+Mengukur apakah user masih aktif menggunakan Mindspend
+setelah beberapa hari sejak pertama daftar.
 
-Tracking:
+| Checkpoint | Target MVP |
+|---|---|
+| Day 1 Retention | 40%+ |
+| Day 7 Retention | 20%+ |
+| Day 30 Retention | 10%+ |
 
-- Day 1 Retention
-- Day 7 Retention
-- Day 30 Retention
+**How to measure:**
+
+PostHog built-in Retention report,
+anchor event `user_registered`.
 
 ---
 
 ## Success Criteria MVP
 
-MVP dianggap berhasil jika:
+MVP dianggap berhasil jika seluruh kriteria berikut terpenuhi
+dalam periode observasi minimal 4 minggu:
 
- User dapat membuat budget
-
- User mencatat transaksi secara rutin
-
- User membuka Weekly Check-In
-
- User mulai mengontrol pengeluaran berdasarkan budget
+- Budget Setup Rate mencapai 80%+
+- Minimal 30% user membuka Weekly Check-In setelah reminder
+- Transaction Creation Rate minimal 3x per user per minggu
+- Day 7 Retention minimal 20%
