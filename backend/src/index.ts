@@ -3,6 +3,7 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.routes";
+import budgetRoutes from "./routes/budget.routes"
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,9 +26,10 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/auth", authRoutes);
+app.use('/budgets', budgetRoutes);
 
 // ── Start Server ─────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📡 Health check: http://localhost:${PORT}/health`);
+  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Health check: http://localhost:${PORT}/health`);
 });
