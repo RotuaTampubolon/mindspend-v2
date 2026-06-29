@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.routes";
 import budgetRoutes from "./routes/budget.routes"
+import transactionRoutes from './routes/transaction.routes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,6 +28,7 @@ app.get("/health", (req, res) => {
 
 app.use("/auth", authRoutes);
 app.use('/budgets', budgetRoutes);
+app.use('/transactions', transactionRoutes);
 
 // ── Start Server ─────────────────────────────
 app.listen(PORT, () => {
