@@ -5,6 +5,7 @@ import cors from "cors";
 import authRoutes from "./routes/auth.routes";
 import budgetRoutes from "./routes/budget.routes"
 import transactionRoutes from './routes/transaction.routes';
+import categoryRoutes from './routes/category.routes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +30,7 @@ app.get("/health", (req, res) => {
 app.use("/auth", authRoutes);
 app.use('/budgets', budgetRoutes);
 app.use('/transactions', transactionRoutes);
+app.use('/categories', categoryRoutes);
 
 // ── Start Server ─────────────────────────────
 app.listen(PORT, () => {
