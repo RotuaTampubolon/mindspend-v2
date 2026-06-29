@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { registerUser } from '../services/auth.service';
+import { registerUser, loginUser } from '../services/auth.service';
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -32,6 +32,38 @@ export const register = async (req: Request, res: Response) => {
     }
 
     // Error lain yang tidak terduga
+    res.status(500).json({
+      message: 'Terjadi kesalahan server',
+    });
+  }
+};
+
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      res.status(400).json({
+        message: 'Email dan password wajib diisi',
+      });
+      return;
+    }
+
+    const result = await loginUser({ email, password });
+
+    res.status(200).json({
+      message: 'Login berhasil',
+      data: result,
+    });
+
+  } catch (error: any) {
+    if (error.message === 'USER_NOT_FOUND' || error.message === 'WRONG_PASSWORD') {
+      res.status(401).json({
+        message: 'Email atau password salah',
+      });
+      return;
+    }
+
     res.status(500).json({
       message: 'Terjadi kesalahan server',
     });

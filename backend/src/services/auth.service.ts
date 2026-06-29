@@ -51,3 +51,48 @@ export const registerUser = async (input: RegisterInput) => {
     },
   };
 };
+
+// ─── Login ──────────────────────────────────
+
+interface LoginInput {
+  email: string;
+  password: string;
+}
+
+export const loginUser = async (input: LoginInput) => {
+  const { email, password } = input;
+
+  // 1. Cari user by email
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    throw new Error('USER_NOT_FOUND');
+  }
+
+  // 2. Bandingkan password dengan hash di database
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+
+  if (!isPasswordValid) {
+    throw new Error('WRONG_PASSWORD');
+  }
+
+  // 3. Generate JWT token
+  const token = jwt.sign(
+    { userId: user.id },
+    process.env.JWT_SECRET as string,
+    { expiresIn: 60 * 60 * 24 * 7 }
+  );
+
+  // 4. Return token + user (tanpa password)
+  return {
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      createdAt: user.createdAt,
+    },
+  };
+};
