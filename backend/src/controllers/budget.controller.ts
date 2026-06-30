@@ -41,7 +41,7 @@ export const getCurrentBudget = async (req: AuthRequest, res: Response) => {
 
     res.status(200).json({
       message: 'Budget ditemukan',
-      data: result,
+      data: result,   
     });
 
   } catch (error: any) {
