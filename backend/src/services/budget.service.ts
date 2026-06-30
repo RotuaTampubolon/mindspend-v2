@@ -98,7 +98,7 @@ export const getCurrentBudgetService = async (userId: string) => {
   const remaining = totalBudget - totalSpent;
   const usagePercent = totalBudget > 0
     ? Math.round((totalSpent / totalBudget) * 100)
-    : 0;
+    : 0;       
 
   // Financial status logic — dari product docs
   let financialStatus: 'HEALTHY' | 'WARNING' | 'DANGER' | 'CRITICAL';
@@ -150,4 +150,122 @@ export const updateBudgetService = async (input: UpdateBudgetInput) => {
   });
 
   return updated;
+}; 
+
+// ─── Get Budget Summary (Enhanced) ──────────────────
+
+export const getBudgetSummaryService = async (userId: string, budgetId: string) => {
+  // 1. Ambil budget, pastikan milik user ini
+  const budget = await prisma.budget.findUnique({
+    where: { id: budgetId },
+  });
+
+  if (!budget) {
+    throw new Error('BUDGET_NOT_FOUND');
+  }
+
+  if (budget.userId !== userId) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  const { month, year } = budget;
+  const totalBudget = Number(budget.totalAmount);
+
+  const startOfMonth = new Date(year, month - 1, 1);
+  const endOfMonth = new Date(year, month, 0, 23, 59, 59);
+  const now = new Date();
+
+  // 2. Total spent bulan ini (sama seperti getCurrentBudgetService)
+  const expenseResult = await prisma.transaction.aggregate({
+    where: {
+      userId,
+      type: 'EXPENSE',
+      date: { gte: startOfMonth, lte: endOfMonth },
+    },
+    _sum: { amount: true },
+  });
+  const totalSpent = Number(expenseResult._sum.amount ?? 0);
+
+  // 3. Breakdown spending per kategori
+  const categoryBreakdown = await prisma.transaction.groupBy({
+    by: ['categoryId'],
+    where: {
+      userId,
+      type: 'EXPENSE',
+      date: { gte: startOfMonth, lte: endOfMonth },
+    },
+    _sum: { amount: true },
+  });
+
+  // groupBy cuma kasih categoryId, kita perlu join manual ke detail kategori
+  const categoryIds = categoryBreakdown
+    .map((c) => c.categoryId)
+    .filter((id): id is string => id !== null);
+
+  const categories = await prisma.category.findMany({
+    where: { id: { in: categoryIds } },
+  });
+
+  const spendingByCategory = categoryBreakdown.map((item) => {
+    const category = categories.find((c) => c.id === item.categoryId);
+    const amount = Number(item._sum.amount ?? 0);
+
+    return {
+      categoryId: item.categoryId,
+      categoryName: category?.name ?? 'Uncategorized',
+      icon: category?.icon ?? 'other',
+      color: category?.color ?? '#9CA3AF',
+      amount,
+      percentage: totalSpent > 0 ? Math.round((amount / totalSpent) * 100) : 0,
+    };
+  });
+
+  // Urutkan dari yang paling besar spending-nya
+  spendingByCategory.sort((a, b) => b.amount - a.amount);
+
+  // 4. Daily average — dua angka, dua cerita berbeda
+  const totalDaysInMonth = new Date(year, month, 0).getDate();
+
+  // Hari yang udah berjalan di bulan ini (minimal 1, hindari divide by zero)
+  const isCurrentMonth = now.getFullYear() === year && now.getMonth() + 1 === month;
+  const daysElapsed = isCurrentMonth ? now.getDate() : totalDaysInMonth;
+  const daysRemaining = isCurrentMonth ? totalDaysInMonth - now.getDate() + 1 : 0;
+
+  const actualDailyAverage = daysElapsed > 0
+    ? Math.round(totalSpent / daysElapsed)
+    : 0;
+
+  const remaining = totalBudget - totalSpent;
+  const recommendedDailySpend = daysRemaining > 0
+    ? Math.round(Math.max(0, remaining) / daysRemaining)
+    : 0;
+
+  // 5. Financial status (logic sama seperti getCurrentBudgetService)
+  const usagePercent = totalBudget > 0
+    ? Math.round((totalSpent / totalBudget) * 100)
+    : 0;
+
+  let financialStatus: 'HEALTHY' | 'WARNING' | 'DANGER' | 'CRITICAL';
+  if (usagePercent < 50) financialStatus = 'HEALTHY';
+  else if (usagePercent < 75) financialStatus = 'WARNING';
+  else if (usagePercent < 90) financialStatus = 'DANGER';
+  else financialStatus = 'CRITICAL';
+
+  return {
+    budget,
+    summary: {
+      totalBudget,
+      totalSpent,
+      remaining,
+      usagePercent,
+      financialStatus,
+    },
+    spendingByCategory,
+    dailyAverage: {
+      actual: actualDailyAverage,
+      recommended: recommendedDailySpend,
+      daysElapsed,
+      daysRemaining,
+    },
+  };
 };

@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { getBudgetSummaryService } from '../services/budget.service';
 import {
   createBudgetService,
   getCurrentBudgetService,
@@ -72,6 +73,30 @@ export const updateBudget = async (req: AuthRequest, res: Response) => {
 
     res.status(200).json({
       message: 'Budget berhasil diupdate',
+      data: result,
+    });
+
+  } catch (error: any) {
+    if (error.message === 'BUDGET_NOT_FOUND') {
+      res.status(404).json({ message: 'Budget tidak ditemukan' });
+      return;
+    }
+    if (error.message === 'UNAUTHORIZED') {
+      res.status(403).json({ message: 'Kamu tidak punya akses ke budget ini' });
+      return;
+    }
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+};
+
+export const getBudgetSummary = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = req.params.id as string;
+
+    const result = await getBudgetSummaryService(req.userId!, id);
+
+    res.status(200).json({
+      message: 'Budget summary ditemukan',
       data: result,
     });
 
