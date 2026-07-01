@@ -199,29 +199,29 @@ export const getBudgetSummaryService = async (userId: string, budgetId: string) 
 
   // groupBy cuma kasih categoryId, kita perlu join manual ke detail kategori
   const categoryIds = categoryBreakdown
-    .map((c) => c.categoryId)
-    .filter((id): id is string => id !== null);
+  .map((c: { categoryId: string | null; _sum: { amount: unknown } }) => c.categoryId)
+  .filter((id: string | null): id is string => id !== null);
 
   const categories = await prisma.category.findMany({
     where: { id: { in: categoryIds } },
   });
 
-  const spendingByCategory = categoryBreakdown.map((item) => {
-    const category = categories.find((c) => c.id === item.categoryId);
-    const amount = Number(item._sum.amount ?? 0);
+  const spendingByCategory = categoryBreakdown.map((item: { categoryId: string | null; _sum: { amount: unknown } }) => {
+  const category = categories.find((c: { id: string }) => c.id === item.categoryId);
+  const amount = Number(item._sum.amount ?? 0);  
 
-    return {
-      categoryId: item.categoryId,
-      categoryName: category?.name ?? 'Uncategorized',
-      icon: category?.icon ?? 'other',
-      color: category?.color ?? '#9CA3AF',
-      amount,
-      percentage: totalSpent > 0 ? Math.round((amount / totalSpent) * 100) : 0,
-    };
-  });
+  return {
+    categoryId: item.categoryId,
+    categoryName: category?.name ?? 'Uncategorized',
+    icon: category?.icon ?? 'other',
+    color: category?.color ?? '#9CA3AF',
+    amount,
+    percentage: totalSpent > 0 ? Math.round((amount / totalSpent) * 100) : 0,
+  };
+});
 
   // Urutkan dari yang paling besar spending-nya
-  spendingByCategory.sort((a, b) => b.amount - a.amount);
+  spendingByCategory.sort((a: { amount: number }, b: { amount: number }) => b.amount - a.amount);
 
   // 4. Daily average — dua angka, dua cerita berbeda
   const totalDaysInMonth = new Date(year, month, 0).getDate();
